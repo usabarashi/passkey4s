@@ -24,7 +24,8 @@ object Worker {
       (request, env, _) => {
         val path = new NativeUrl(request.url).pathname
         val result =
-          if (!knownRoutes.contains(path)) scala.concurrent.Future.successful(jsonError(404, s"unknown route: $path"))
+          if (!knownRoutes.contains(path))
+            env.ASSETS.fetch(request).asInstanceOf[js.Promise[CFResponse]].toFuture
           else
             request
               .clone()

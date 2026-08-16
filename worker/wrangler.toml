@@ -6,6 +6,10 @@ compatibility_date = "2026-05-25"
 RP_ID = "localhost"
 ORIGIN = "http://localhost:18787"
 
+[assets]
+directory = "./public"
+binding = "ASSETS"
+
 [[durable_objects.bindings]]
 name = "USER_DO"
 class_name = "UserDurableObject"

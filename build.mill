@@ -6,7 +6,7 @@ import mill.scalajslib._
 import mill.scalajslib.api._
 
 trait Passkey4sModule extends ScalaJSModule {
-  def scalaVersion = "3.3.4"
+  def scalaVersion = "3.4.3"
   def scalaJSVersion = "1.17.0"
 }
 
@@ -22,4 +22,13 @@ object worker extends Passkey4sModule {
   def moduleKind = ModuleKind.ESModule
 
   def moduleDeps = Seq(webauthn)
+}
+
+object client extends Passkey4sModule {
+  def moduleKind = ModuleKind.ESModule
+  def moduleDeps = Seq(webauthn)
+
+  def mvnDeps = Seq(
+    mvn"io.indigoengine::tyrian-io::0.11.0"
+  )
 }
