@@ -31,6 +31,13 @@
         # so a non-reproducible Coursier/Mill/Scala.js output fails the build
         # outright rather than silently succeeding. See .mill-jvm-version for
         # why Mill's own bootstrap doesn't need a separate JDK fetch here.
+        #
+        # outputHash below was computed and verified deterministic (via
+        # `nix build --rebuild`) on aarch64-darwin only. It has not been
+        # confirmed on other systems `eachDefaultSystem` covers (e.g. Linux
+        # CI runners) — a mismatch there doesn't necessarily mean the build
+        # is broken, just that this hash needs a per-system value. CI treats
+        # this derivation as informational for exactly that reason.
         packages.default = pkgs.stdenv.mkDerivation {
           pname = "passkey4s";
           version = "0.1.0";

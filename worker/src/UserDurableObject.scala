@@ -155,6 +155,15 @@ class UserDurableObject(ctx: DurableObjectState, env: js.Any) {
     result.toJSPromise
   }
 
+  // deleteAll() wipes the tables but the DO instance can stay warm and keep
+  // receiving requests until evicted — re-create the schema immediately so
+  // a request landing right after the reset gets a clean, working DO rather
+  // than a 500 from a query against tables that no longer exist.
   @JSExport
-  def alarm(): js.Promise[Unit] = ctx.storage.deleteAll()
+  def alarm(): js.Promise[Unit] =
+    ctx.storage
+      .deleteAll()
+      .toFuture
+      .map(_ => Storage.ensureSchema(ctx.storage))
+      .toJSPromise
 }

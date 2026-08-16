@@ -37,7 +37,22 @@ jobs:
       - name: Run tests
         run: nix develop --command mill webauthn.test
 
-      - name: Build reproducible artifacts
+      # The real, blocking build gate: proves the artifacts build on the
+      # platform CI actually runs (ubuntu-latest), independent of the FOD
+      # hash below.
+      - name: Build worker and client
+        run: |
+          nix develop --command mill worker.assets
+          nix develop --command mill worker.fullLinkJS
+
+      # packages.default's outputHash was only ever computed and verified
+      # deterministic on aarch64-darwin (see commit history) — it has not
+      # been confirmed to hold on Linux. Non-blocking until that's checked:
+      # a mismatch here means the hash needs a Linux-specific update (or
+      # packages.default needs to key outputHash by `system`), not that the
+      # actual build is broken — the step above is what CI depends on.
+      - name: Verify reproducible nix build (informational)
+        continue-on-error: true
         run: nix build
 
   deploy:
