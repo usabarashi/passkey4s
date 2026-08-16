@@ -45,14 +45,12 @@ jobs:
           nix develop --command mill worker.assets
           nix develop --command mill worker.fullLinkJS
 
-      # packages.default's outputHash was only ever computed and verified
-      # deterministic on aarch64-darwin (see commit history) — it has not
-      # been confirmed to hold on Linux. Non-blocking until that's checked:
-      # a mismatch here means the hash needs a Linux-specific update (or
-      # packages.default needs to key outputHash by `system`), not that the
-      # actual build is broken — the step above is what CI depends on.
-      - name: Verify reproducible nix build (informational)
-        continue-on-error: true
+      # packages.default's outputHash is keyed per system (see flake.nix);
+      # confirmed passing on this runner (ubuntu-latest / x86_64-linux) after
+      # an earlier run surfaced the correct hash via a deliberate mismatch.
+      # Blocking: a failure here means the build genuinely stopped being
+      # reproducible on this platform.
+      - name: Verify reproducible nix build
         run: nix build
 
   deploy:
