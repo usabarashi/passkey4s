@@ -22,6 +22,19 @@ object worker extends Passkey4sModule {
   def moduleKind = ModuleKind.ESModule
 
   def moduleDeps = Seq(webauthn)
+
+  def indexHtml = Task.Source(moduleDir / "public" / "index.html")
+
+  // Assembles the directory wrangler's [assets] binding serves: the
+  // hand-written index.html plus the compiled Tyrian client, so `wrangler
+  // dev`/`deploy` never need a manual copy step before running.
+  def assets: T[PathRef] = Task {
+    val dest = Task.dest
+    os.copy(indexHtml().path, dest / "index.html", createFolders = true)
+    os.copy(client.fastLinkJS().dest.path / "main.js", dest / "main.js")
+    os.copy(client.fastLinkJS().dest.path / "main.js.map", dest / "main.js.map")
+    PathRef(dest)
+  }
 }
 
 object client extends Passkey4sModule {
