@@ -1,40 +1,50 @@
 package passkey4s.worker
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.scalajs.js
+import scala.scalajs.js.JSConverters._
+import scala.scalajs.js.Thenable.Implicits._
 import scala.scalajs.js.annotation._
 import passkey4s.worker.facade._
 
-// Spike: prove Scala.js can export a Durable Object class (fetch + alarm)
-// and round-trip a value through ctx.storage.sql.exec under wrangler dev.
-@JSExportTopLevel("SpikeDO")
-class SpikeDO(ctx: DurableObjectState, env: js.Any) {
-
-  ctx.blockConcurrencyWhile(() => {
-    ctx.storage.sql.exec("CREATE TABLE IF NOT EXISTS spike (id INTEGER PRIMARY KEY, note TEXT)")
-    js.Promise.resolve[Unit](())
-  })
-
-  @JSExport
-  def fetch(request: CFRequest): js.Promise[CFResponse] = {
-    ctx.storage.sql.exec("INSERT INTO spike (note) VALUES (?)", "hello-from-scala-js")
-    val rows = ctx.storage.sql.exec("SELECT id, note FROM spike").toArray()
-    val body = js.JSON.stringify(rows)
-    val init = new ResponseInit { status = 200 }
-    js.Promise.resolve(new CFResponse(body, init))
-  }
-
-  @JSExport
-  def alarm(): js.Promise[Unit] = ctx.storage.deleteAll()
-}
+private val knownRoutes =
+  Set("/register/options", "/register/verify", "/login/options", "/login/verify")
 
 object Worker {
+  private def jsonError(status: Int, reason: String): CFResponse = {
+    val init = new ResponseInit {}
+    init.status = status
+    init.headers = js.Dictionary("Content-Type" -> "application/json")
+    new CFResponse(js.JSON.stringify(js.Dynamic.literal(success = false, reason = reason)), init)
+  }
+
   @JSExportTopLevel("default")
   val handler: js.Object = new js.Object {
     val fetch: js.Function3[CFRequest, js.Dynamic, js.Dynamic, js.Promise[CFResponse]] =
       (request, env, _) => {
-        val id = env.SPIKE_DO.idFromName("spike-user")
-        val stub = env.SPIKE_DO.get(id)
-        stub.fetch(request).asInstanceOf[js.Promise[CFResponse]]
+        val path = new NativeUrl(request.url).pathname
+        val result =
+          if (!knownRoutes.contains(path)) scala.concurrent.Future.successful(jsonError(404, s"unknown route: $path"))
+          else
+            request
+              .clone()
+              .text()
+              .toFuture
+              .map { text =>
+                val body = js.JSON.parse(text).asInstanceOf[js.Dynamic]
+                body.username.asInstanceOf[js.UndefOr[String]].toOption
+              }
+              .flatMap {
+                case None => scala.concurrent.Future.successful(jsonError(400, "missing \"username\""))
+                case Some(username) if username.trim.isEmpty =>
+                  scala.concurrent.Future.successful(jsonError(400, "missing \"username\""))
+                case Some(username) =>
+                  val id = env.USER_DO.asInstanceOf[DurableObjectNamespace].idFromName(username)
+                  val stub = env.USER_DO.asInstanceOf[DurableObjectNamespace].get(id)
+                  stub.fetch(request).toFuture
+              }
+              .recover { case e: Throwable => jsonError(500, s"internal error: ${e.getMessage}") }
+        result.toJSPromise
       }
   }
 }

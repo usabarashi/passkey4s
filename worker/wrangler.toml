@@ -1,11 +1,15 @@
-name = "passkey4s-spike"
+name = "passkey4s"
 main = "../out/worker/fastLinkJS.dest/main.js"
 compatibility_date = "2026-05-25"
 
+[vars]
+RP_ID = "localhost"
+ORIGIN = "http://localhost:18787"
+
 [[durable_objects.bindings]]
-name = "SPIKE_DO"
-class_name = "SpikeDO"
+name = "USER_DO"
+class_name = "UserDurableObject"
 
 [[migrations]]
 tag = "v1"
-new_sqlite_classes = ["SpikeDO"]
+new_sqlite_classes = ["UserDurableObject"]
