@@ -25,3 +25,12 @@ new_sqlite_classes = ["UserDurableObject"]
 [env.production.vars]
 RP_ID = "REPLACE_WITH_YOUR_WORKERS_DEV_SUBDOMAIN"
 ORIGIN = "https://REPLACE_WITH_YOUR_WORKERS_DEV_SUBDOMAIN"
+
+# wrangler environments do NOT inherit top-level durable_objects bindings —
+# each named environment needs its own copy, or `--env production` silently
+# deploys without the USER_DO binding at all (caught by wrangler's own
+# warning on a real deploy attempt: "durable_objects exists at the top
+# level, but not on env.production").
+[[env.production.durable_objects.bindings]]
+name = "USER_DO"
+class_name = "UserDurableObject"
