@@ -1,0 +1,13 @@
+package build
+
+import mill._
+import mill.scalalib._
+import mill.scalajslib._
+import mill.scalajslib.api._
+
+object worker extends ScalaJSModule {
+  def scalaVersion = "3.3.4"
+  def scalaJSVersion = "1.17.0"
+
+  def moduleKind = ModuleKind.ESModule
+}
