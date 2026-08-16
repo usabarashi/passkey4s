@@ -2,3 +2,7 @@ out/
 .wrangler/
 worker/public/main.js
 worker/public/main.js.map
+result
+.metals/
+.vscode/
+.bsp/

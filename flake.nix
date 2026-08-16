@@ -25,6 +25,41 @@
 
           JAVA_HOME = pkgs.jdk21.home;
         };
+
+        # Fixed-output derivation: network access during the build is only
+        # permitted by Nix because outputHash pins what the result must be,
+        # so a non-reproducible Coursier/Mill/Scala.js output fails the build
+        # outright rather than silently succeeding. See .mill-jvm-version for
+        # why Mill's own bootstrap doesn't need a separate JDK fetch here.
+        packages.default = pkgs.stdenv.mkDerivation {
+          pname = "passkey4s";
+          version = "0.1.0";
+          src = self;
+
+          nativeBuildInputs = [
+            pkgs.mill
+            pkgs.nodejs_22
+          ];
+
+          outputHashMode = "recursive";
+          outputHashAlgo = "sha256";
+          outputHash = "sha256-sGAGS8AYiT6S7mx+lvT43ajcX7uSTa+EYtKMuzqLg5A=";
+
+          buildPhase = ''
+            export HOME=$TMPDIR
+            export COURSIER_CACHE=$TMPDIR/coursier-cache
+            export _JAVA_OPTIONS="-Duser.home=$TMPDIR"
+            mill worker.assets
+            mill worker.fullLinkJS
+          '';
+
+          installPhase = ''
+            mkdir -p $out/assets
+            cp out/worker/assets.dest/index.html $out/assets/
+            cp out/worker/assets.dest/main.js $out/assets/
+            cp out/worker/fullLinkJS.dest/main.js $out/worker.js
+          '';
+        };
       }
     );
 }

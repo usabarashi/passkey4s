@@ -1,5 +1,5 @@
 name = "passkey4s"
-main = "../out/worker/fastLinkJS.dest/main.js"
+main = "../out/worker/fullLinkJS.dest/main.js"
 compatibility_date = "2026-05-25"
 
 [vars]
