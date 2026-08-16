@@ -1,0 +1,27 @@
+name = "passkey4s"
+main = "../out/worker/fullLinkJS.dest/main.js"
+compatibility_date = "2026-05-25"
+
+[vars]
+RP_ID = "localhost"
+ORIGIN = "http://localhost:18787"
+
+[assets]
+directory = "../out/worker/assets.dest"
+binding = "ASSETS"
+
+[[durable_objects.bindings]]
+name = "USER_DO"
+class_name = "UserDurableObject"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["UserDurableObject"]
+
+# RP_ID/ORIGIN are per-environment (Q16): `wrangler dev` uses the top-level
+# [vars] above (localhost). Before the first real deploy, fill these in with
+# the actual *.workers.dev subdomain wrangler assigns this Worker — it can't
+# be known ahead of time, and getting it wrong breaks every passkey ceremony.
+[env.production.vars]
+RP_ID = "REPLACE_WITH_YOUR_WORKERS_DEV_SUBDOMAIN"
+ORIGIN = "https://REPLACE_WITH_YOUR_WORKERS_DEV_SUBDOMAIN"

@@ -1,0 +1,52 @@
+package build
+
+import mill._
+import mill.scalalib._
+import mill.scalajslib._
+import mill.scalajslib.api._
+
+trait Passkey4sModule extends ScalaJSModule {
+  def scalaVersion = "3.4.3"
+  def scalaJSVersion = "1.17.0"
+}
+
+object webauthn extends Passkey4sModule {
+  object test extends ScalaJSTests with TestModule.Munit {
+    def mvnDeps = Seq(
+      mvn"org.scalameta::munit::1.0.2"
+    )
+  }
+}
+
+object worker extends Passkey4sModule {
+  def moduleKind = ModuleKind.ESModule
+
+  def moduleDeps = Seq(webauthn)
+
+  def indexHtml = Task.Source(moduleDir / "public" / "index.html")
+
+  // Assembles the directory wrangler's [assets] binding serves: the
+  // hand-written index.html plus the compiled Tyrian client, so `wrangler
+  // dev`/`deploy` never need a manual copy step before running.
+  //
+  // Uses fullLinkJS, not fastLinkJS: fastLinkJS's non-optimizing emitter was
+  // found to order a class's multiple @JSExport members non-deterministically
+  // between JVM runs (confirmed by diffing two fresh links), which broke the
+  // Nix fixed-output derivation's reproducibility check. fullLinkJS's
+  // optimizing emitter does not have this issue.
+  def assets: T[PathRef] = Task {
+    val dest = Task.dest
+    os.copy(indexHtml().path, dest / "index.html", createFolders = true)
+    os.copy(client.fullLinkJS().dest.path / "main.js", dest / "main.js")
+    PathRef(dest)
+  }
+}
+
+object client extends Passkey4sModule {
+  def moduleKind = ModuleKind.ESModule
+  def moduleDeps = Seq(webauthn)
+
+  def mvnDeps = Seq(
+    mvn"io.indigoengine::tyrian-io::0.11.0"
+  )
+}
