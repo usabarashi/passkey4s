@@ -5,9 +5,21 @@ import mill.scalalib._
 import mill.scalajslib._
 import mill.scalajslib.api._
 
-object worker extends ScalaJSModule {
+trait Passkey4sModule extends ScalaJSModule {
   def scalaVersion = "3.3.4"
   def scalaJSVersion = "1.17.0"
+}
 
+object webauthn extends Passkey4sModule {
+  object test extends ScalaJSTests with TestModule.Munit {
+    def mvnDeps = Seq(
+      mvn"org.scalameta::munit::1.0.2"
+    )
+  }
+}
+
+object worker extends Passkey4sModule {
   def moduleKind = ModuleKind.ESModule
+
+  def moduleDeps = Seq(webauthn)
 }
